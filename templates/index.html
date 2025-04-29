@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI-Powered Data Insights</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <style>
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #1e1e2f;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            text-align: center;
+        }
+
+        h2 {
+            font-size: 2em;
+            color: #2c3e50;
+            margin-bottom: 20px;
+        }
+
+        
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 80%;
+            max-width: 600px;
+            height: 90%;
+        }
+
+       
+        .upload-section {
+            background-color: #2c3e50;
+            padding: 10px;
+            border-radius: 10px;
+            width: 100%;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .upload-section h2 {
+            color: #fff;
+            margin-bottom: 15px;
+            font-size: 1.8em;
+        }
+
+        .upload-btn {
+            padding: 15px;
+            background-color: #3498db;
+            color: #fff;
+            font-size: 1.2em;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            width: 90%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .upload-btn i {
+            margin-right: 10px;
+        }
+
+        .upload-btn:hover {
+            background-color: #2980b9;
+        }
+
+        #uploadStatus {
+            margin-top: 5px;
+            font-weight: bold;
+            color: #27ae60;
+        }
+
+       
+        .ask-section {
+            background-color: #2c3e50;
+            padding: 20px;
+            border-radius: 10px;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+
+        .ask-section h2 {
+            font-size: 1.8em;
+            color: #fff;
+            margin-bottom: 15px;
+        }
+
+        .ask-section input[type="text"] {
+            padding: 12px;
+            width: 80%;
+            font-size: 1em;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            transition: all 0.3s ease;
+            color: #fff;
+            background-color: #34495e;
+        }
+
+        .ask-section input[type="text"]:focus {
+            border-color: #3498db;
+        }
+
+        .ask-section button {
+            background-color: #e67e22;
+            color: #fff;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            font-size: 1.2em;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .ask-section button:hover {
+            background-color: #d35400;
+        }
+
+        
+        #chat-section {
+            width: 100%;
+            max-height: 400px;
+            overflow-y: auto;
+            overflow-x: hidden; 
+            word-break: break-word;
+        }
+
+
+        .chat-message {
+        margin-bottom: 15px;
+        font-size: 1.2em;
+        padding: 10px;
+        border-radius: 10px;
+        max-width: 80%;
+        word-wrap: break-word; 
+        white-space: pre-wrap; 
+        overflow-wrap: break-word; 
+        }
+
+
+        .user-message {
+            background-color: #3498db;
+            color: #fff;
+            margin-left: auto;
+        }
+
+        .ai-message {
+            background-color: #2ecc71;
+            color: #fff;
+            margin-right: auto;
+        }
+
+        
+        @media (max-width: 768px) {
+            .container {
+                width: 90%;
+            }
+
+            .upload-section, .ask-section, #chat-section {
+                width: 100%;
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+
+        
+        <div class="upload-section">
+            <h2>Upload Your File</h2>
+            <label for="fileInput" class="upload-btn">
+                <i class="material-icons">cloud_upload</i> Click to upload
+            </label>
+            <input type="file" id="fileInput">
+            <p id="uploadStatus"></p>
+        </div>
+
+        
+        <div class="ask-section">
+            <h2>Ask EXCEL AI a Question</h2>
+            <input type="text" id="query" placeholder="Enter your question">
+            <button onclick="askAI()">Ask</button>
+        </div>
+
+        
+        <div id="chat-section">
+           
+        </div>
+
+    </div>
+
+    <script>
+        let uploadedFilename = "";
+
+        function uploadFile() {
+            let file = document.getElementById('fileInput').files[0];
+            if (!file) { alert("Please select a file"); return; }
+            let formData = new FormData();
+            formData.append("file", file);
+
+            $.ajax({
+                url: "/upload",
+                type: "POST",
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(response) {
+                    uploadedFilename = response.filename;
+                    $("#uploadStatus").text("File uploaded: " + uploadedFilename);
+                },
+                error: function(err) {
+                    alert("Upload failed: " + err.responseJSON.error);
+                }
+            });
+        }
+
+        
+        document.getElementById('fileInput').addEventListener('change', uploadFile);
+
+        function askAI() {
+            let query = document.getElementById("query").value;
+            if (!uploadedFilename) { alert("Please upload a file first"); return; }
+            if (!query) { alert("Please enter a query"); return; }
+
+            
+            const userMessage = document.createElement('div');
+            userMessage.classList.add('chat-message');
+            userMessage.classList.add('user-message');
+            userMessage.innerText = `You: ${query}`;
+            document.getElementById("chat-section").appendChild(userMessage);
+
+            $.ajax({
+                url: "/ask",
+                type: "POST",
+                contentType: "application/json",
+                data: JSON.stringify({ filename: uploadedFilename, query: query }),
+                success: function(response) {
+                    
+                    let responseText = "";
+
+                    
+                    if (Array.isArray(response)) {
+                        
+                        responseText = response.map(item => {
+                            
+                            return JSON.stringify(item); 
+                        }).join(", ");
+                    } else if (typeof response === "object") {
+                        
+                        responseText = JSON.stringify(response); 
+                    } else {
+                        
+                        responseText = response;
+                    }
+
+                    
+                    const aiMessage = document.createElement('div');
+                    aiMessage.classList.add('chat-message');
+                    aiMessage.classList.add('ai-message');
+                    aiMessage.innerText = `AI: ${responseText}`;
+                    document.getElementById("chat-section").appendChild(aiMessage);
+
+                    
+                    const chatSection = document.getElementById("chat-section");
+                    chatSection.scrollTop = chatSection.scrollHeight;
+
+                    
+                    document.getElementById("query").value = "";
+                },
+                error: function(err) {
+                    alert("Error: " + err.responseJSON.error);
+                }
+            });
+        }
+    </script>
+
+</body>
+</html>
